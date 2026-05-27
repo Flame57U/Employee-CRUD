@@ -1,7 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(Test-Path \"e:\\\\PY\\\\Quantsaas\\\\go.mod\")"
+      "Bash(Test-Path \"e:\\\\PY\\\\Quantsaas\\\\go.mod\")",
+      "Bash(go mod *)",
+      "Bash(go get *)",
+      "Bash(grep -q \"^\\\\.env$\" \"e:/PY/Quantsaas/.gitignore\")",
+      "Bash(go build *)",
+      "Bash(go list *)",
+      "Bash(go version *)",
+      "Bash(go env *)"
     ]
   }
 }

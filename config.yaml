@@ -1,0 +1,23 @@
+# QuantSaaS configuration template
+# Secrets MUST be supplied via environment variables; never commit real values here.
+#
+#   DB_DSN         — full Postgres DSN (e.g. postgres://user:pass@host:5432/quantsaas)
+#   REDIS_PASSWORD — Redis AUTH password
+#   JWT_SECRET     — HS256 signing secret (min 32 chars)
+
+app_role: dev   # saas | lab | dev
+
+database:
+  dsn: ""        # set via DB_DSN
+
+redis:
+  addr: "127.0.0.1:6379"
+  password: ""   # set via REDIS_PASSWORD
+  db: 0
+
+jwt:
+  secret: ""     # set via JWT_SECRET
+  expiry_hours: 24
+
+server:
+  port: "8080"

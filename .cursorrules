@@ -1,0 +1,36 @@
+# QuantSaaS — Cursor 工作约束
+
+## 唯一功能真源
+当前系统的所有功能只能依据 docs/ 下三份文档实现：
+- docs/QuanSaas系统总体拓扑结构.md
+- docs/纯粹策略数学引擎.md
+- docs/进化计算引擎.md
+
+三份文档中未定义的功能，不进入实现。
+
+## 工作顺序
+1. 涉及策略或回测 → 先读 docs/纯粹策略数学引擎.md
+2. 涉及 Go 后端 → 遵守 GORM Code-First，只用 AutoMigrate，禁止手写 DDL
+3. 涉及价格/收益计算 → 优先无量纲表达（比率、z-score、rank）
+4. 涉及架构边界 → 保持 SaaS-Strategy-Agent 三层分工，不做预防性解耦
+
+## 核心约束（铁律）
+1. 每个策略必须满足复利前置条件才能进行仓位计算
+2. 回测与实盘调用同一 Step() 实现，禁止分叉代码路径
+3. Step() 只在 SaaS 侧执行，Agent 只接收下单指令
+4. internal/strategies/*/ 和 internal/strategy/ 内部禁止网络、数据库、文件 I/O
+5. API Key 和凭证只允许存在于 .env，禁止硬编码或提交
+
+## 代码目录
+- cmd/saas/           SaaS HTTP 服务入口
+- cmd/agent/          Agent 二进制入口
+- internal/saas/      SaaS 业务逻辑、API handler
+- internal/agent/     Agent 运行时、编排
+- internal/strategy/  策略接口定义（无 I/O）
+- internal/strategies/[名称]/  各具名策略实现
+- internal/quant/     Math Engine：因子、信号、组合优化
+- internal/adapters/backtest/  回测适配器
+
+## 验证命令
+go list ./...
+go test ./...
