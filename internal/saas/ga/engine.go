@@ -98,73 +98,15 @@ func (eng *EvolutionEngine) RunEpoch(ctx context.Context, strategyID uint, symbo
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	population := eng.initPopulation(strategyID, popSize, rng)
 
-	// Step 3: Evaluate initial population
-	scores := eng.evaluatePopulation(population, plan)
-	inds := makeIndividuals(population, scores)
-
-	mutProb := eng.MutationProbability
-	mutScale := eng.MutationScale
-	bestFitness := -math.MaxFloat64
-	patienceCount := 0
-	generation := 0
-
-	// Step 4: Main evolution loop
-	for gen := 0; gen < maxGen; gen++ {
-		generation = gen
-		select {
-		case <-ctx.Done():
-			return EpochResult{}, ctx.Err()
-		default:
-		}
-
-		sort.Slice(inds, func(i, j int) bool {
-			return inds[i].fitness > inds[j].fitness
-		})
-
-		currentBest := inds[0].fitness
-		if currentBest-bestFitness >= eng.EarlyStopMinDelta {
-			bestFitness = currentBest
-			patienceCount = 0
-		} else {
-			patienceCount++
-		}
-
-		if patienceCount >= eng.EarlyStopPatience {
-			mutProb = math.Min(mutProb*eng.MutationRampFactor, eng.MutationProbabilityMax)
-			mutScale = math.Min(mutScale*eng.MutationRampFactor, eng.MutationScaleMax)
-		}
-
-		if cfg.OnProgress != nil {
-			cfg.OnProgress(gen, currentBest, mutProb, mutScale)
-		}
-
-		// Early stop: ramp params both at ceiling and still no improvement
-		if mutProb >= eng.MutationProbabilityMax &&
-			mutScale >= eng.MutationScaleMax &&
-			patienceCount >= eng.EarlyStopPatience {
-			break
-		}
-
-		// Produce next generation
-		next := make([]Gene, 0, popSize)
-		for i := 0; i < eng.EliteCount && i < len(inds); i++ {
-			next = append(next, inds[i].gene)
-		}
-		for len(next) < popSize {
-			pa := eng.tournamentSelect(inds, rng)
-			pb := eng.tournamentSelect(inds, rng)
-			child := eng.evolvable.Crossover(pa, pb, rng)
-			child = eng.evolvable.Mutate(child, mutProb, mutScale, rng)
-			next = append(next, child)
-		}
-
-		newScores := eng.evaluatePopulation(next, plan)
-		inds = makeIndividuals(next, newScores)
+	// Step 3+4: Run the pure GA loop. Evaluation is injected so the loop's
+	// dynamics (elitism, tournament selection, mutation ramp) stay decoupled
+	// from plan/DB concerns and remain unit-testable in isolation.
+	inds, generation, err := eng.runEvolution(ctx, population, maxGen, rng,
+		func(pop []Gene) []float64 { return eng.evaluatePopulation(pop, plan) },
+		cfg.OnProgress)
+	if err != nil {
+		return EpochResult{}, err
 	}
-
-	sort.Slice(inds, func(i, j int) bool {
-		return inds[i].fitness > inds[j].fitness
-	})
 
 	// Step 5: Persist best individual as challenger
 	champion := inds[0]
@@ -197,6 +139,99 @@ func (eng *EvolutionEngine) RunEpoch(ctx context.Context, strategyID uint, symbo
 		GeneRecordID: rec.ID,
 		Generations:  generation + 1,
 	}, nil
+}
+
+// runEvolution drives the generational GA loop over an already-built initial
+// population. Fitness evaluation is supplied as a closure so the loop carries
+// no plan/DB coupling — this is what makes elitism and the mutation ramp
+// exercisable without any persistence layer.
+//
+// It returns the final population sorted by descending fitness and the index of
+// the last generation executed (so callers report generation+1 as the count,
+// matching the original inline loop).
+func (eng *EvolutionEngine) runEvolution(
+	ctx context.Context,
+	initialPop []Gene,
+	maxGen int,
+	rng *rand.Rand,
+	evaluate func(pop []Gene) []float64,
+	onProgress func(generation int, bestFitness, mutProb, mutScale float64),
+) ([]individual, int, error) {
+	popSize := len(initialPop)
+
+	scores := evaluate(initialPop)
+	inds := makeIndividuals(initialPop, scores)
+
+	mutProb := eng.MutationProbability
+	mutScale := eng.MutationScale
+	bestFitness := -math.MaxFloat64
+	patienceCount := 0
+	generation := 0
+
+	for gen := 0; gen < maxGen; gen++ {
+		generation = gen
+		select {
+		case <-ctx.Done():
+			return nil, generation, ctx.Err()
+		default:
+		}
+
+		sort.Slice(inds, func(i, j int) bool {
+			return inds[i].fitness > inds[j].fitness
+		})
+
+		currentBest := inds[0].fitness
+		if currentBest-bestFitness >= eng.EarlyStopMinDelta {
+			bestFitness = currentBest
+			patienceCount = 0
+		} else {
+			patienceCount++
+		}
+
+		if patienceCount >= eng.EarlyStopPatience {
+			mutProb = math.Min(mutProb*eng.MutationRampFactor, eng.MutationProbabilityMax)
+			mutScale = math.Min(mutScale*eng.MutationRampFactor, eng.MutationScaleMax)
+		}
+
+		if onProgress != nil {
+			onProgress(gen, currentBest, mutProb, mutScale)
+		}
+
+		// Early stop: ramp params both at ceiling and still no improvement.
+		if mutProb >= eng.MutationProbabilityMax &&
+			mutScale >= eng.MutationScaleMax &&
+			patienceCount >= eng.EarlyStopPatience {
+			break
+		}
+
+		next := eng.nextGeneration(inds, popSize, mutProb, mutScale, rng)
+		newScores := evaluate(next)
+		inds = makeIndividuals(next, newScores)
+	}
+
+	sort.Slice(inds, func(i, j int) bool {
+		return inds[i].fitness > inds[j].fitness
+	})
+	return inds, generation, nil
+}
+
+// nextGeneration builds the successor population from a fitness-sorted parent
+// slice: the top EliteCount genes are carried over verbatim (elitism), and the
+// remainder are bred via tournament selection → crossover → mutation. inds must
+// already be sorted by descending fitness.
+func (eng *EvolutionEngine) nextGeneration(inds []individual, popSize int, mutProb, mutScale float64, rng *rand.Rand) []Gene {
+	next := make([]Gene, 0, popSize)
+	for i := 0; i < eng.EliteCount && i < len(inds); i++ {
+		next = append(next, inds[i].gene)
+	}
+	for len(next) < popSize {
+		pa := eng.tournamentSelect(inds, rng)
+		pb := eng.tournamentSelect(inds, rng)
+		child := eng.evolvable.Crossover(pa, pb, rng)
+		child = eng.evolvable.Mutate(child, mutProb, mutScale, rng)
+		next = append(next, child)
+	}
+	return next
 }
 
 // buildPlan constructs the immutable EvaluablePlan for the Epoch.

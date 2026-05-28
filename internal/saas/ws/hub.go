@@ -16,10 +16,6 @@ import (
 )
 
 const (
-	// authTimeout is the window during which the Agent must send the first
-	// auth frame; closes the connection otherwise.
-	authTimeout = 10 * time.Second
-
 	// writeTimeout bounds every outbound frame.
 	writeTimeout = 5 * time.Second
 
@@ -27,6 +23,11 @@ const (
 	// Agents heartbeat every 30s, so 70s gives us two missed beats of slack.
 	readDeadline = 70 * time.Second
 )
+
+// authTimeout is the window during which the Agent must send the first auth
+// frame; the connection is closed otherwise. It is a var (not a const) solely
+// so tests can shorten it — production behaviour is the 10s default.
+var authTimeout = 10 * time.Second
 
 // ErrAgentNotConnected is returned by SendToAgent when no live socket exists
 // for the target user. Callers (e.g. the cron tick) should log + skip.
