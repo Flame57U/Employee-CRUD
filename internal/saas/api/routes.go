@@ -34,8 +34,35 @@ type Deps struct {
 	EvolveSvc *epoch.EpochService
 }
 
+// corsMiddleware sets permissive CORS headers so browser clients on any origin
+// can call the API. Adjust allowed origins for production hardening.
+func corsMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Origin,Content-Type,Authorization")
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
+		c.Next()
+	}
+}
+
 // Register installs all routes on r using deps. Returns r for chaining.
 func Register(r *gin.Engine, deps Deps) *gin.Engine {
+	r.Use(corsMiddleware())
+
+	// Root — basic API info, no auth required.
+	r.GET("/", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"name":    "QuantSaaS API",
+			"version": "v1",
+			"status":  "ok",
+			"docs":    "/api/v1",
+		})
+	})
+
 	// Health probe — unauthenticated, no /api/v1 prefix, suitable for L4 probes.
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})

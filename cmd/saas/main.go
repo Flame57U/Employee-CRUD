@@ -51,6 +51,7 @@ func main() {
 	evolveSvc := epoch.NewEpochService(db, engine)
 
 	r := gin.Default()
+	r.HandleMethodNotAllowed = true
 	api.Register(r, api.Deps{
 		DB:        db,
 		Redis:     redis,
