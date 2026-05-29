@@ -1,0 +1,91 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-qs-bg: #020617;
+  --color-qs-surface: rgba(255, 255, 255, 0.04);
+  --color-qs-accent: #2dd4bf;
+  --color-qs-warm: #ff8c6b;
+  --color-qs-info: #0ea5e9;
+  --color-qs-safe: #34d399;
+  --color-qs-danger: #f87171;
+  --color-qs-warn: #fbbf24;
+  --color-qs-text: #e2e8f0;
+  --color-qs-text-dim: #94a3b8;
+  --color-qs-text-faint: #64748b;
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: #020617;
+  color: #e2e8f0;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Thin scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 3px;
+}
+
+/* Bento grid: 1 col mobile, 2 md, 4 lg */
+.qs-bento-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+}
+@media (min-width: 768px) {
+  .qs-bento-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1024px) {
+  .qs-bento-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Background glow drift animations */
+@keyframes qs-drift-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(40px, 30px) scale(1.08); }
+}
+@keyframes qs-drift-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-30px, -40px) scale(1.05); }
+}
+@keyframes qs-drift-c {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-46%, -54%) scale(1.1); }
+}
+@keyframes qs-rise {
+  0% { transform: translateY(0); opacity: 0; }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.4; }
+  100% { transform: translateY(-110vh); opacity: 0; }
+}
+
+.qs-glow-a { animation: qs-drift-a 18s ease-in-out infinite; }
+.qs-glow-b { animation: qs-drift-b 22s ease-in-out infinite; }
+.qs-glow-c { animation: qs-drift-c 26s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .qs-glow-a, .qs-glow-b, .qs-glow-c { animation: none; }
+  .qs-particle { display: none; }
+}
