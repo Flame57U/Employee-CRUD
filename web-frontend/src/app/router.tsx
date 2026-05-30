@@ -7,6 +7,7 @@ import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { InstancesPage } from '@/features/instances/InstancesPage'
 import { MarketPage } from '@/features/market/MarketPage'
 import { TemplatesPage } from '@/features/templates/TemplatesPage'
+import { AgentsPage } from '@/features/agents/AgentsPage'
 import { ComingSoonPage } from '@/components/ComingSoonPage'
 
 // Redirects to /login when unauthenticated, preserving the attempted path.
@@ -42,7 +43,7 @@ export function AppRouter() {
         <Route path="templates" element={<TemplatesPage />} />
         <Route path="instances" element={<InstancesPage />} />
         <Route path="evolution" element={<ComingSoonPage title="进化实验室" />} />
-        <Route path="agents" element={<ComingSoonPage title="Agent 管理" />} />
+        <Route path="agents" element={<AgentsPage />} />
         <Route path="backtesting" element={<ComingSoonPage title="回测" />} />
         <Route path="settings" element={<ComingSoonPage title="账户设置" />} />
       </Route>
