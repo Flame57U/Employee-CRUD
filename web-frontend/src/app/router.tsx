@@ -8,7 +8,9 @@ import { InstancesPage } from '@/features/instances/InstancesPage'
 import { MarketPage } from '@/features/market/MarketPage'
 import { TemplatesPage } from '@/features/templates/TemplatesPage'
 import { AgentsPage } from '@/features/agents/AgentsPage'
-import { ComingSoonPage } from '@/components/ComingSoonPage'
+import { EvolutionPage } from '@/features/evolution/EvolutionPage'
+import { BacktestPage } from '@/features/backtesting/BacktestPage'
+import { SettingsPage } from '@/features/settings/SettingsPage'
 
 // Redirects to /login when unauthenticated, preserving the attempted path.
 function AuthGate({ children }: { children: React.ReactNode }) {
@@ -42,10 +44,10 @@ export function AppRouter() {
         <Route path="market" element={<MarketPage />} />
         <Route path="templates" element={<TemplatesPage />} />
         <Route path="instances" element={<InstancesPage />} />
-        <Route path="evolution" element={<ComingSoonPage title="进化实验室" />} />
+        <Route path="evolution" element={<EvolutionPage />} />
         <Route path="agents" element={<AgentsPage />} />
-        <Route path="backtesting" element={<ComingSoonPage title="回测" />} />
-        <Route path="settings" element={<ComingSoonPage title="账户设置" />} />
+        <Route path="backtesting" element={<BacktestPage />} />
+        <Route path="settings" element={<SettingsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
