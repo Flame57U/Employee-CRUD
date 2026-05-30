@@ -7,6 +7,7 @@ package main
 import (
 	"flag"
 	"log"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/quantsaas/platform/internal/saas/api"
@@ -15,6 +16,7 @@ import (
 	"github.com/quantsaas/platform/internal/saas/epoch"
 	"github.com/quantsaas/platform/internal/saas/ga"
 	"github.com/quantsaas/platform/internal/saas/instance"
+	"github.com/quantsaas/platform/internal/saas/itick"
 	"github.com/quantsaas/platform/internal/saas/store"
 	"github.com/quantsaas/platform/internal/saas/ws"
 )
@@ -50,6 +52,13 @@ func main() {
 	engine := ga.NewEvolutionEngine(&ga.DCABalanceEvolvable{}, db)
 	evolveSvc := epoch.NewEpochService(db, engine)
 
+	// Market data client — token/host come from the environment (.env), never
+	// from config.yaml, so the secret stays out of source control.
+	itickClient := itick.NewClient(os.Getenv("ITICK_TOKEN"), os.Getenv("ITICK_REST_HOST"))
+	if !itickClient.Enabled() {
+		log.Printf("warning: ITICK_TOKEN unset — /market endpoints will return 503")
+	}
+
 	r := gin.Default()
 	r.HandleMethodNotAllowed = true
 	api.Register(r, api.Deps{
@@ -59,6 +68,7 @@ func main() {
 		Hub:       hub,
 		Manager:   mgr,
 		EvolveSvc: evolveSvc,
+		Itick:     itickClient,
 	})
 
 	port := cfg.Server.Port

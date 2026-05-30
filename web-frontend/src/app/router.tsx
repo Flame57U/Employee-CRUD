@@ -4,6 +4,8 @@ import { AppShell } from '@/components/AppShell'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { RegisterPage } from '@/features/auth/RegisterPage'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
+import { InstancesPage } from '@/features/instances/InstancesPage'
+import { MarketPage } from '@/features/market/MarketPage'
 import { ComingSoonPage } from '@/components/ComingSoonPage'
 
 // Redirects to /login when unauthenticated, preserving the attempted path.
@@ -35,8 +37,9 @@ export function AppRouter() {
         }
       >
         <Route index element={<DashboardPage />} />
+        <Route path="market" element={<MarketPage />} />
         <Route path="templates" element={<ComingSoonPage title="策略模板" />} />
-        <Route path="instances" element={<ComingSoonPage title="实例管理" />} />
+        <Route path="instances" element={<InstancesPage />} />
         <Route path="evolution" element={<ComingSoonPage title="进化实验室" />} />
         <Route path="agents" element={<ComingSoonPage title="Agent 管理" />} />
         <Route path="backtesting" element={<ComingSoonPage title="回测" />} />

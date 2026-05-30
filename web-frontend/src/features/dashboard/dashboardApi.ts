@@ -64,3 +64,19 @@ export function startInstance(id: number) {
 export function stopInstance(id: number) {
   return apiRequest<{ id: number; status: string }>(`/instances/${id}/stop`, { method: 'POST' })
 }
+
+// Templates are read-only blueprints; /strategies serializes GORM structs (PascalCase).
+export function getStrategies() {
+  return apiRequest<{ strategies: InstanceTemplate[] }>('/strategies').then((r) => r.strategies)
+}
+
+export function createInstance(templateId: number) {
+  return apiRequest<InstanceRow>('/instances', {
+    method: 'POST',
+    body: { template_id: templateId },
+  })
+}
+
+export function deleteInstance(id: number) {
+  return apiRequest<{ id: number; deleted: boolean }>(`/instances/${id}`, { method: 'DELETE' })
+}

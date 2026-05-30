@@ -9,6 +9,7 @@ import {
   Dna,
   Cpu,
   LineChart,
+  CandlestickChart,
   Settings,
   LogOut,
   ChevronDown,
@@ -18,7 +19,7 @@ import { useAuthStore } from '@/store/authStore'
 import { apiRequest } from '@/lib/api'
 import { AppBackground } from './AppBackground'
 
-type Feature = 'dashboard' | 'strategies' | 'instances' | 'evolution' | 'agents' | 'backtesting' | 'settings'
+type Feature = 'dashboard' | 'market' | 'strategies' | 'instances' | 'evolution' | 'agents' | 'backtesting' | 'settings'
 
 interface NavItem {
   to: string
@@ -31,6 +32,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { to: '/', label: '总览', icon: LayoutDashboard, feature: 'dashboard', end: true },
+  { to: '/market', label: '行情', icon: CandlestickChart, feature: 'market' },
   { to: '/templates', label: '策略模板', icon: LayoutTemplate, feature: 'strategies' },
   { to: '/instances', label: '实例管理', icon: Boxes, feature: 'instances' },
   { to: '/evolution', label: '进化实验室', icon: Dna, feature: 'evolution' },

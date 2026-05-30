@@ -20,6 +20,7 @@ import (
 	"github.com/quantsaas/platform/internal/saas/auth"
 	"github.com/quantsaas/platform/internal/saas/epoch"
 	"github.com/quantsaas/platform/internal/saas/instance"
+	"github.com/quantsaas/platform/internal/saas/itick"
 	"github.com/quantsaas/platform/internal/saas/store"
 	"github.com/quantsaas/platform/internal/saas/ws"
 )
@@ -32,6 +33,7 @@ type Deps struct {
 	Hub       *ws.Hub
 	Manager   *instance.Manager
 	EvolveSvc *epoch.EpochService
+	Itick     *itick.Client
 }
 
 // corsMiddleware sets permissive CORS headers so browser clients on any origin
@@ -85,6 +87,7 @@ func Register(r *gin.Engine, deps Deps) *gin.Engine {
 		NewInstanceHandler(deps.DB, deps.Manager).RegisterRoutes(user)
 		NewDashboardHandler(deps.DB).RegisterRoutes(user)
 		NewAgentHandler(deps.Hub).RegisterRoutes(user)
+		NewMarketHandler(deps.Itick).RegisterRoutes(user)
 	}
 
 	// ── Lab/Dev only ─────────────────────────────────────────────────────────
